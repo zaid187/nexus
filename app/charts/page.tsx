@@ -72,18 +72,18 @@ export default function ChartsPage() {
               },
             ]);
           }}
-          className="px-4 py-2 rounded-md bg-[#14ffec]/10 border border-[#14ffec]/30 text-[#14ffec] hover:bg-[#14ffec]/15 transition text-sm"
+          className="px-4 py-2 rounded-md bg-[#14ffec]/10 border border-[#14ffec]/30 text-[#14ffec] hover:bg-[#14ffec]/15 transition-colors duration-200 text-sm"
         >
           + Add Chart
         </button>
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {charts.map((chart) => {
           return (
             <ChartCard key={chart.id} title={`Chart #${chart.id}`}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex flex-col md:flex-row md:items-end gap-4 mb-5">
                 <Selector
                   label="Chart Type"
                   value={chart.type}
@@ -160,7 +160,7 @@ export default function ChartsPage() {
       </div>
 
       {/* Insight hint */}
-      <div className="bg-[#1a1d24] p-6 rounded-xl border border-[#14ffec]/20">
+      <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
         <h3 className="text-lg text-[#14ffec] mb-2">Why separate Charts?</h3>
         <p className="text-sm text-gray-400">
           Just like Power BI, dashboards show KPIs, while charts pages focus purely
@@ -187,13 +187,13 @@ function Selector({
   disabled?: boolean;
 }) {
   return (
-    <div className="bg-[#1a1d24] p-6 rounded-xl border border-[#14ffec]/20">
-      <h3 className="text-[#14ffec] mb-3">{label}</h3>
+    <div className="w-full md:w-1/3 bg-zinc-900 p-4 rounded-xl border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
+      <h3 className="text-[#14ffec] mb-2 text-sm">{label}</h3>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full bg-[#0b1018] border border-gray-700 rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-zinc-950/60 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#14ffec]/30 focus:border-[#14ffec]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
       >
         <option value="">Select column</option>
         {options.map((opt) => (
@@ -214,7 +214,7 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-[#1a1d24] p-6 rounded-xl border border-[#14ffec]/20 h-[420px]">
+    <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:border-zinc-700 hover:shadow-[0_0_0_1px_rgba(20,255,236,0.08)] transition-all duration-200 h-[420px]">
       <h3 className="text-xl text-[#14ffec] mb-4">{title}</h3>
       {children}
     </div>
