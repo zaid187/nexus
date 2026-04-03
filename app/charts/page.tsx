@@ -34,8 +34,14 @@ export default function ChartsPage() {
     setCharts((prev) =>
       prev.map((c) => ({
         ...c,
-        numeric: c.numeric || numericColumns[0] || "",
-        category: c.category || categoricalColumns[0] || "",
+        numeric:
+          c.numeric && numericColumns.includes(c.numeric)
+            ? c.numeric
+            : numericColumns[0] || "",
+        category:
+          c.category && categoricalColumns.includes(c.category)
+            ? c.category
+            : categoricalColumns[0] || "",
       }))
     );
   }, [numericColumns, categoricalColumns]);
@@ -95,7 +101,20 @@ export default function ChartsPage() {
                   onChange={(v) => {
                     setCharts((prev) =>
                       prev.map((c) =>
-                        c.id === chart.id ? { ...c, type: v as UiChartType } : c
+                        c.id === chart.id
+                          ? {
+                              ...c,
+                              type: v as UiChartType,
+                              numeric:
+                                c.numeric && numericColumns.includes(c.numeric)
+                                  ? c.numeric
+                                  : numericColumns[0] || "",
+                              category:
+                                c.category && categoricalColumns.includes(c.category)
+                                  ? c.category
+                                  : categoricalColumns[0] || "",
+                            }
+                          : c
                       )
                     );
                   }}
