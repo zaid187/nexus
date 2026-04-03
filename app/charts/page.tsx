@@ -2,47 +2,46 @@
 
 import MainLayout from "@/components/layout/MainLayout";
 import { useDataset } from "@/context/DatasetContext";
-import BillingTrendChart from "@/components/BillingTrendChart";
-import PatientConditionsChart from "@/components/PatientConditionsChart";
-import LineChartView from "@/components/charts/LineChartView";
-import PieChartView from "@/components/charts/PieChartView";
 
-import { useState, useEffect, useMemo } from "react";
+import ChartRenderer from "@/components/charts/ChartRenderer";
+import { useEffect, useRef, useState } from "react";
+
+type UiChartType = "line" | "bar" | "pie";
+
+type ChartConfig = {
+  id: number;
+  type: UiChartType;
+  numeric: string;
+  category: string;
+};
 
 export default function ChartsPage() {
   const { rows, numericColumns, categoricalColumns } = useDataset();
 
-  const [numericCol, setNumericCol] = useState<string>("");
-  const [categoryCol, setCategoryCol] = useState<string>("");
+  const nextIdRef = useRef(2);
 
-  // Auto-select defaults
+  const [charts, setCharts] = useState<ChartConfig[]>([
+    {
+      id: 1,
+      type: "line",
+      numeric: numericColumns[0] || "",
+      category: categoricalColumns[0] || "",
+    },
+  ]);
+
   useEffect(() => {
-    if (!numericCol && numericColumns.length > 0) {
-      setNumericCol(numericColumns[0]);
-    }
-  }, [numericColumns, numericCol]);
+    if (numericColumns.length === 0 && categoricalColumns.length === 0) return;
+    setCharts((prev) =>
+      prev.map((c) => ({
+        ...c,
+        numeric: c.numeric || numericColumns[0] || "",
+        category: c.category || categoricalColumns[0] || "",
+      }))
+    );
+  }, [numericColumns, categoricalColumns]);
 
-  useEffect(() => {
-    if (!categoryCol && categoricalColumns.length > 0) {
-      setCategoryCol(categoricalColumns[0]);
-    }
-  }, [categoricalColumns, categoryCol]);
-
-  // ---- Pie chart data prep ----
-  const pieData = useMemo(() => {
-    if (!rows || !categoryCol) return [];
-
-    const map: Record<string, number> = {};
-    rows.forEach((row: any) => {
-      const key = row[categoryCol];
-      if (key) map[key] = (map[key] || 0) + 1;
-    });
-
-    return Object.entries(map).map(([name, value]) => ({
-      name,
-      value,
-    }));
-  }, [rows, categoryCol]);
+  const canShowNumericSelector = (t: UiChartType) => t === "line";
+  const canShowCategorySelector = (t: UiChartType) => t === "bar" || t === "pie";
 
   return (
     <MainLayout>
@@ -54,43 +53,110 @@ export default function ChartsPage() {
         </p>
       </div>
 
-      {/* Column Selectors */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Selector
-          label="Numeric Column"
-          value={numericCol}
-          options={numericColumns}
-          onChange={setNumericCol}
-        />
-
-        <Selector
-          label="Category Column"
-          value={categoryCol}
-          options={categoricalColumns}
-          onChange={setCategoryCol}
-        />
+      {/* Add Chart */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="text-sm text-gray-400">
+          Add multiple charts and configure each independently.
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const id = nextIdRef.current++;
+            setCharts((prev) => [
+              ...prev,
+              {
+                id,
+                type: "line",
+                numeric: numericColumns[0] || "",
+                category: categoricalColumns[0] || "",
+              },
+            ]);
+          }}
+          className="px-4 py-2 rounded-md bg-[#14ffec]/10 border border-[#14ffec]/30 text-[#14ffec] hover:bg-[#14ffec]/15 transition text-sm"
+        >
+          + Add Chart
+        </button>
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
-        {/* Existing charts */}
-        <ChartCard title="Trend Analysis">
-          <BillingTrendChart rows={rows} column={numericCol || null} />
-        </ChartCard>
+        {charts.map((chart) => {
+          return (
+            <ChartCard key={chart.id} title={`Chart #${chart.id}`}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <Selector
+                  label="Chart Type"
+                  value={chart.type}
+                  options={[
+                    { value: "line", label: "Line" },
+                    { value: "bar", label: "Bar" },
+                    { value: "pie", label: "Pie" },
+                  ]}
+                  onChange={(v) => {
+                    setCharts((prev) =>
+                      prev.map((c) =>
+                        c.id === chart.id ? { ...c, type: v as UiChartType } : c
+                      )
+                    );
+                  }}
+                />
 
-        <ChartCard title="Category Distribution">
-          <PatientConditionsChart rows={rows} column={categoryCol || null} />
-        </ChartCard>
+                <Selector
+                  label="Numeric Column"
+                  value={chart.numeric}
+                  options={numericColumns.map((c) => ({ value: c, label: c }))}
+                  disabled={!canShowNumericSelector(chart.type)}
+                  onChange={(v) => {
+                    setCharts((prev) =>
+                      prev.map((c) => (c.id === chart.id ? { ...c, numeric: v } : c))
+                    );
+                  }}
+                />
 
-        {/* NEW: Line Chart */}
-        <ChartCard title="Line Chart (Detailed)">
-          <LineChartView rows={rows} column={numericCol || null} />
-        </ChartCard>
+                <Selector
+                  label="Categorical Column"
+                  value={chart.category}
+                  options={categoricalColumns.map((c) => ({ value: c, label: c }))}
+                  disabled={!canShowCategorySelector(chart.type)}
+                  onChange={(v) => {
+                    setCharts((prev) =>
+                      prev.map((c) =>
+                        c.id === chart.id ? { ...c, category: v } : c
+                      )
+                    );
+                  }}
+                />
+              </div>
 
-        {/* NEW: Pie Chart */}
-        <ChartCard title="Pie Chart">
-          <PieChartView data={pieData.slice(0, 6)} />
-        </ChartCard>
+              <div className="h-[320px]">
+                {chart.type === "line" && (
+                  <ChartRenderer
+                    type="line"
+                    data={rows ?? []}
+                    xKey="__index__"
+                    yKey={chart.numeric}
+                  />
+                )}
+                {chart.type === "bar" && (
+                  <ChartRenderer
+                    type="bar"
+                    data={rows ?? []}
+                    xKey={chart.category}
+                    yKey={chart.numeric}
+                  />
+                )}
+                {chart.type === "pie" && (
+                  <ChartRenderer
+                    type="pie"
+                    data={rows ?? []}
+                    xKey={chart.category}
+                    yKey={chart.numeric}
+                  />
+                )}
+              </div>
+            </ChartCard>
+          );
+        })}
       </div>
 
       {/* Insight hint */}
@@ -112,11 +178,13 @@ function Selector({
   value,
   options,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
-  options: string[];
+  options: Array<{ value: string; label: string }>;
   onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="bg-[#1a1d24] p-6 rounded-xl border border-[#14ffec]/20">
@@ -124,12 +192,13 @@ function Selector({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-[#0b1018] border border-gray-700 rounded-md px-3 py-2 text-sm"
+        disabled={disabled}
+        className="w-full bg-[#0b1018] border border-gray-700 rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">Select column</option>
-        {options.map((col) => (
-          <option key={col} value={col}>
-            {col}
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
           </option>
         ))}
       </select>
